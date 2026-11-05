@@ -131,7 +131,7 @@ module.exports = async function handler(req, res) {
     const payload = JSON.stringify({
       model,
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history],
-      temperature: 0.7,
+      temperature: 0.2,
       max_tokens: 2048
     });
 
