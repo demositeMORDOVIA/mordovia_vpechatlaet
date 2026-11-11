@@ -5,6 +5,9 @@
     },
     "api/live-data.js": {
       "maxDuration": 20
+    },
+    "api/events.js": {
+      "maxDuration": 60
     }
   }
 }

@@ -1,13 +1,14 @@
 const https = require("https");
 const crypto = require("crypto");
 const { getLiveSources, inferTopic } = require("../lib/live-sources");
+const { getLiveEvents } = require("../lib/events");
 
 const SYSTEM_PROMPT = `Ты — Лисичка, дружелюбный туристический помощник сайта «Шумбрат — Мордовия». Помогай планировать поездки по Саранску и Республике Мордовия.
 
 КРИТИЧЕСКОЕ ПРАВИЛО ДОСТОВЕРНОСТИ:
-1. Не используй собственные знания модели как источник фактов о Мордовии. Для фактических сведений используй только каталог сайта и тексты официальных источников, приложенные к текущему запросу. Исключение — погода: используй только свежий блок Open-Meteo из каталога сайта, если он присутствует и проверен не более часа назад.
-2. Каталог сайта содержит названия и общие описания объектов. Он НЕ подтверждает адреса, часы работы, цены, наличие мест, рейтинги, расписания, маршруты общественного транспорта или текущие события.
-3. Точные адреса улиц, номера домов, часы работы, даты и время мероприятий, цены, наличие билетов/мест, номера автобусов, остановки и интервалы движения называй ТОЛЬКО если они прямо присутствуют в тексте доступного официального источника. Не додумывай и не округляй.
+1. Не используй собственные знания модели как источник фактов о Мордовии. Для фактических сведений используй только каталог сайта и тексты официальных источников, приложенные к текущему запросу. Для афиши и покупки билетов дополнительно используй свежие карточки событий из KASSIR.RU — это билетный сервис, а не организатор; при расхождении с сайтом организатора обязательно сообщи о расхождении. Исключение — погода: используй только свежий блок Open-Meteo из каталога сайта, если он присутствует и проверен не более часа назад.
+2. Каталог сайта содержит названия и общие описания объектов. Он НЕ подтверждает адреса, часы работы, цены, наличие мест, рейтинги, расписания или текущие события. Восстановленный список городских автобусов на сайте — справочная информация из прежней версии, а не подтверждение действующей схемы; не выдавай его номера, остановки и время в пути за актуальные без подтверждения в свежем официальном источнике.
+3. Точные адреса улиц, номера домов, часы работы, даты и время мероприятий, цены, наличие билетов/мест, номера автобусов, остановки и интервалы движения называй ТОЛЬКО если они прямо присутствуют в тексте доступного официального источника; для билетов на события допускается актуальная карточка самого билетного сервиса KASSIR.RU. Не додумывай и не округляй.
 4. Если источник недоступен или в нём нет нужного значения, прямо скажи: «Не нашла подтверждённой информации. Уточняйте на официальном сайте». По возможности дай ссылку на подходящий официальный источник.
 5. Для изменяемых часов работы, цен, наличия и постоянных расписаний требуется явная дата обновления или период действия в официальном источнике. Если такой даты/периода нет, не называй точное значение — направь на официальную страницу. Дата проверки страницы сервером сама по себе не доказывает, что её содержимое недавно обновлялось.
 6. Не выдавай старые события за предстоящие. Сверяй даты с текущей датой, указанной в контексте. Архивные и прошедшие события не предлагай как актуальные.
@@ -103,10 +104,40 @@ function safeSiteContext(input) {
     }
     return out;
   }) : [];
+  const eventsCheckedAt = cleanText(input.eventsCheckedAt, 50);
+  const eventsCheckedMs = Date.parse(eventsCheckedAt);
+  const eventsFresh = Number.isFinite(eventsCheckedMs) && Date.now() - eventsCheckedMs >= -5 * 60 * 1000 && Date.now() - eventsCheckedMs <= 45 * 60 * 1000;
+  const siteEvents = eventsFresh && Array.isArray(input.events) ? input.events.slice(0, 36).filter(event => {
+    if (!event || typeof event !== "object") return false;
+    try {
+      const url = new URL(String(event.url || ""));
+      const eventTime = Date.parse(String(event.dateTime || ""));
+      return url.protocol === "https:" && url.hostname === "saransk.kassir.ru" && Number.isFinite(eventTime) && eventTime >= Date.now() - 2 * 60 * 60 * 1000;
+    } catch (_) { return false; }
+  }).map(event => ({
+    title: cleanText(event.title, 180),
+    category: ["concert", "theater", "show", "sport", "festival", "culture", "family"].includes(event.category) ? event.category : "culture",
+    types: Array.isArray(event.types) ? event.types.filter(type => ["concert", "theater", "show", "sport", "festival", "culture", "family"].includes(type)).slice(0, 7) : [],
+    date: cleanText(event.date, 20),
+    dateTime: cleanText(event.dateTime, 40),
+    dateLabel: cleanText(event.dateLabel, 50),
+    time: cleanText(event.time, 10),
+    place: cleanText(event.place, 160),
+    description: cleanText(event.description, 300),
+    price: cleanText(event.price, 60),
+    priceNum: typeof event.priceNum === "number" ? event.priceNum : null,
+    url: cleanText(event.url, 300),
+    soldOut: Boolean(event.soldOut),
+    age: cleanText(event.age, 8)
+  })).filter(event => event.title && event.url) : [];
   return {
     attractions: take(input.attractions, ["name", "category", "area", "description"], 100),
     accommodation: take(input.accommodation, ["name", "type", "area", "price", "availability"], 35),
     routes: take(input.routes, ["name", "area", "stops", "description", "note"], 20),
+    cityTransportRoutes: take(input.cityTransportRoutes, ["number", "name", "from", "to", "stops", "time", "note"], 30),
+    eventsCheckedAt: eventsFresh ? eventsCheckedAt : null,
+    eventsStatus: eventsFresh ? cleanText(input.eventsStatus, 20) : "stale",
+    events: siteEvents,
     weather: (() => {
       if (!input.weather || typeof input.weather !== "object") return null;
       const checkedAt = cleanText(input.weather.checkedAt, 50);
@@ -136,7 +167,7 @@ function getLatestUserText(incoming) {
   return "";
 }
 
-function makeGroundingMessage(siteContext, liveData) {
+function makeGroundingMessage(siteContext, liveData, liveEvents) {
   const nowMoscow = new Intl.DateTimeFormat("ru-RU", {
     timeZone: "Europe/Moscow", dateStyle: "long", timeStyle: "short"
   }).format(new Date());
@@ -157,7 +188,10 @@ ${JSON.stringify(siteContext || {}, null, 0)}
 ТЕКСТЫ ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ, ЗАГРУЖЕННЫЕ ДЛЯ ЭТОГО ЗАПРОСА:
 ${JSON.stringify(sources, null, 0)}
 
-Используй точные изменяемые сведения только из источников со status="ok". Для каждой точной даты, цены, улицы, времени, остановки или номера маршрута проверь, что значение прямо содержится в доступном тексте. Если нужного значения нет, не указывай его. Ссылки в источниках можно передавать пользователю. Если источник вернул только меню или не содержит нужной информации, считай, что подтверждения нет.`;
+АКТУАЛЬНЫЕ КАРТОЧКИ СОБЫТИЙ И БИЛЕТОВ ИЗ KASSIR.RU:
+${JSON.stringify({checkedAt: liveEvents && liveEvents.checkedAt || null, status: liveEvents && liveEvents.status || "unavailable", source: liveEvents && liveEvents.source || null, events: (liveEvents && Array.isArray(liveEvents.events) ? liveEvents.events : []).slice(0, 24).map(event => ({title:event.title, category:event.category, date:event.date, dateLabel:event.dateLabel, time:event.time, place:event.place, description:event.description, price:event.price, priceNum:event.priceNum, soldOut:event.soldOut, url:event.url}))}, null, 0)}
+
+Используй точные изменяемые сведения только из источников со status="ok". Для дат, времени и цен мероприятий можно использовать только карточки событий выше, если status="ok" и дата ещё не прошла. KASSIR.RU — билетный сервис: не называй его организатором мероприятия. Для каждой точной даты, цены, улицы, времени, остановки или номера маршрута проверь, что значение прямо содержится в доступном тексте или карточке. Если нужного значения нет, не указывай его. Ссылки в источниках можно передавать пользователю. Если источник вернул только меню или не содержит нужной информации, считай, что подтверждения нет.`;
 }
 
 function normalized(value) {
@@ -252,10 +286,16 @@ function replyHasUnsupportedDetails(reply, evidence, topic, currentHoursEvidence
   return null;
 }
 
-function safeFallback(liveData) {
+function safeFallback(liveData, topic) {
   const links = (liveData.sources || []).filter(source => source.status === "ok").slice(0, 2);
+  if (topic === "events" && !links.some(source => /kassir/i.test(source.url || ""))) {
+    links.push({ name: "KASSIR.RU — афиша Саранска", url: "https://saransk.kassir.ru/" });
+  }
   const linkText = links.length ? " Проверить можно здесь: " + links.map(source => `${source.name}: ${source.url}`).join("; ") : " Откройте официальный сайт соответствующего объекта или организатора.";
-  return "Не хочу вводить вас в заблуждение: в проверенных материалах не нашла подтверждения этой детали. Уточняйте на официальном сайте." + linkText;
+  const intro = topic === "events"
+    ? "Не хочу вводить вас в заблуждение: не удалось подтвердить актуальные сведения о мероприятии. Проверьте страницу организатора или билетный сервис."
+    : "Не хочу вводить вас в заблуждение: в проверенных материалах не нашла подтверждения этой детали. Уточняйте на официальном сайте.";
+  return intro + linkText;
 }
 
 module.exports = async function handler(req, res) {
@@ -292,14 +332,22 @@ module.exports = async function handler(req, res) {
     const userText = getLatestUserText(incoming);
     const topic = inferTopic(userText);
     const siteContext = safeSiteContext(req.body && req.body.siteContext);
-    let liveData = { checkedAt: new Date().toISOString(), sources: [] };
-    try {
-      liveData = await getLiveSources(topic);
-    } catch (sourceError) {
+    const liveSourcesTask = getLiveSources(topic).catch(sourceError => {
       console.error("LISICHKA_LIVE_SOURCES_ERROR", sourceError && sourceError.message ? sourceError.message : String(sourceError));
-    }
+      return { checkedAt: new Date().toISOString(), sources: [] };
+    });
+    const hasFreshSiteEvents = Boolean(siteContext && siteContext.eventsCheckedAt && ["ok", "empty", "unavailable"].includes(siteContext.eventsStatus));
+    const liveEventsTask = topic === "events"
+      ? hasFreshSiteEvents
+        ? Promise.resolve({ checkedAt: siteContext.eventsCheckedAt, status: siteContext.eventsStatus, source: { name: "KASSIR.RU — афиша Саранска", url: "https://saransk.kassir.ru/" }, events: siteContext.events || [] })
+        : getLiveEvents({ maxPages: 14, concurrency: 14 }).catch(eventError => {
+            console.error("LISICHKA_LIVE_EVENTS_ERROR", eventError && eventError.message ? eventError.message : String(eventError));
+            return { checkedAt: null, status: "unavailable", source: { name: "KASSIR.RU", url: "https://saransk.kassir.ru/" }, events: [] };
+          })
+      : Promise.resolve({ checkedAt: null, status: "not_requested", source: null, events: [] });
+    const [liveData, liveEvents] = await Promise.all([liveSourcesTask, liveEventsTask]);
 
-    const grounding = makeGroundingMessage(siteContext, liveData);
+    const grounding = makeGroundingMessage(siteContext, liveData, liveEvents);
     const payload = JSON.stringify({
       model,
       messages: [
@@ -314,7 +362,7 @@ module.exports = async function handler(req, res) {
     let result = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       const token = await getToken(authKey, scope);
-      console.log(`LISICHKA_DIAG: GigaChat attempt ${attempt + 1}/2; topic=${topic}; liveSources=${liveData.sources.filter(source => source.status === "ok").length}`);
+      console.log(`LISICHKA_DIAG: GigaChat attempt ${attempt + 1}/2; topic=${topic}; liveSources=${liveData.sources.filter(source => source.status === "ok").length}; liveEvents=${liveEvents.events.length}`);
       result = await httpsRequest("https://gigachat.devices.sberbank.ru/api/v1/chat/completions", {
         headers: {
           "Content-Type": "application/json",
@@ -340,18 +388,18 @@ module.exports = async function handler(req, res) {
     let reply = String(result.json.choices?.[0]?.message?.content || "").trim();
     if (!reply) return res.status(502).json({ error: "GigaChat не вернул текстовый ответ. Попробуйте ещё раз." });
 
-    const evidence = [JSON.stringify(siteContext || {}), ...liveData.sources.filter(source => source.status === "ok").map(source => source.content)].join(" ");
+    const evidence = [JSON.stringify(siteContext || {}), ...liveData.sources.filter(source => source.status === "ok").map(source => source.content), JSON.stringify(liveEvents && liveEvents.status === "ok" ? liveEvents.events : [])].join(" ");
     const currentSources = liveData.sources.filter(source => source.status === "ok" && (
       String(source.freshnessNote || "").startsWith("На странице найдено явное указание даты обновления") ||
       String(source.freshnessNote || "").startsWith("На странице есть период действия расписания")
     ));
     const currentHoursEvidence = currentSources.map(source => source.content).join(" ");
-    const currentPriceEvidence = currentSources.map(source => source.content).join(" ");
+    const currentPriceEvidence = currentSources.map(source => source.content).join(" ") + (topic === "events" && liveEvents.status === "ok" ? JSON.stringify(liveEvents.events) : "");
     const currentTransportEvidence = currentSources.filter(source => source.category === "transport").map(source => source.content).join(" ");
     const rejected = replyHasUnsupportedDetails(reply, evidence, topic, currentHoursEvidence, currentPriceEvidence, currentTransportEvidence);
     if (rejected) {
       console.warn("LISICHKA_GROUNDING_BLOCK", rejected);
-      reply = safeFallback(liveData);
+      reply = safeFallback(liveData, topic);
     }
 
     console.log("LISICHKA_DIAG: grounded response received successfully");

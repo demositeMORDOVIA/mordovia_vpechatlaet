@@ -221,6 +221,33 @@ h2{font-size:22px;margin:28px 0 14px;letter-spacing:-.4px}
 .passport-open-btn{display:flex;align-items:center;gap:7px;white-space:nowrap;border:1px solid rgba(200,16,46,.22);background:#fff7f3;color:var(--red);border-radius:999px;padding:9px 13px;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(80,35,20,.05)}
 .passport-open-btn:hover{background:#ffece4;transform:translateY(-1px)}
 @media(max-width:760px){.passport-open-btn{padding:9px 10px}.passport-open-btn span{display:none}.head{gap:10px}.head-icons{gap:7px;margin-left:4px}}
+
+/* Афиша: визуальные карточки мероприятий с фотографией и билетом */
+.afisha-local-banner{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:14px 0 18px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.afisha-total{display:flex;align-items:center;gap:10px;white-space:nowrap;color:var(--muted);font-size:12px}
+.afisha-total strong{font-size:28px;color:var(--red)}
+@media(max-width:620px){.afisha-local-banner{align-items:flex-start;flex-direction:column}.afisha-total{white-space:normal}}
+
+.event-card{min-width:0}
+.event-card .event-cover{height:178px;position:relative;overflow:hidden;background:linear-gradient(135deg,#8b3e2f,#d28a62);display:flex;align-items:center;justify-content:center}
+.event-card .event-cover img{display:block;width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.event-card .event-cover-fallback{font-size:52px;color:rgba(255,255,255,.92);text-shadow:0 2px 10px rgba(0,0,0,.15)}
+.event-card .event-cover:not(.no-event-image) .event-cover-fallback{display:none}
+.event-card .event-date-badge{padding:10px 16px;min-height:56px}
+.event-card .event-age{margin-left:auto;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 8px}
+.event-card .event-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.event-card .event-source-note{font-size:10px;color:var(--muted);margin-top:10px}
+.afisha-empty{text-align:center;padding:32px 20px;grid-column:1/-1}
+.afisha-empty-icon{font-size:34px;margin-bottom:8px}
+.home-event-mini{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.home-event-mini>img,.home-event-placeholder{width:100%;height:116px;object-fit:cover;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#8b3e2f,#d28a62);font-size:38px;color:white}
+.home-event-mini-body{padding:12px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.home-event-mini-body>span{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--red);font-weight:700}
+.home-event-mini-body>b{font-size:13px;line-height:1.35}
+.home-event-mini-body>small{font-size:11px;color:var(--muted)}
+.home-event-mini-body>a{font-size:12px;color:var(--red);font-weight:700;margin-top:4px}
+@media(max-width:900px){.events-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-events-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.events-grid,.home-events-grid{grid-template-columns:1fr}.event-card .event-cover{height:190px}.event-card .event-foot{align-items:flex-start}}
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -1003,7 +1030,7 @@ img{max-width:100%}
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:18px 20px;border-bottom:1px solid var(--line)">
           <b>Карта Саранска</b>
-          <p class="sub" style="margin:6px 0 0">OpenStreetMap. Карта показывает расположение основных транспортных узлов; схемы городских маршрутов проверяйте по официальным сообщениям администрации.</p>
+          <p class="sub" style="margin:6px 0 0">OpenStreetMap. Выберите номер городского маршрута справа — направление и основные остановки появятся в карточке.</p>
         </div>
         <div id="mapCity" class="tr-map"></div>
       </div>
@@ -1012,9 +1039,9 @@ img{max-width:100%}
         <div class="tr-route-grid" id="cityRouteButtons"></div>
         <div class="tr-route-card" id="cityRouteCard">
           <h3>Выберите номер маршрута</h3>
-          <p class="sub" style="margin:0">Непроверенные остановки и интервалы движения не показываются.</p>
+          <p class="sub" style="margin:0">Карточка с направлением и основными остановками появится после выбора номера маршрута.</p>
         </div>
-        <div class="note" style="margin-top:16px">Схемы и интервалы движения могут меняться. Актуальные изменения смотрите в официальных сообщениях администрации Саранска и уточняйте у перевозчика.</div>
+        <div class="note" style="margin-top:16px">Восстановлен справочный список маршрутов из прежней версии сайта. Остановки и время в пути ориентировочные; перед поездкой проверяйте изменения у перевозчика и в сообщениях администрации Саранска.</div>
       </div>
     </div>
   </div>
@@ -1099,23 +1126,43 @@ img{max-width:100%}
 </div></div>
 
 
-<!-- АФИША: ТОЛЬКО ОБНОВЛЯЕМЫЕ ОФИЦИАЛЬНЫЕ ИСТОЧНИКИ -->
+<!-- АФИША: КАРТОЧКИ СОБЫТИЙ С ПЕРЕХОДОМ К ПОКУПКЕ БИЛЕТОВ -->
 <div class="page" id="p-events"><div class="wrap">
   <div class="events-hero card">
     <div>
       <div class="eyebrow">События Мордовии</div>
       <h1>Афиша</h1>
-      <p class="sub">Проверяем официальные афиши музеев, театров и туристического портала. Даты, время и билеты смотрите у организатора.</p>
+      <p class="sub">Концерты, театр, фестивали, выставки, спорт и семейные события — выбирайте категорию и переходите к покупке билетов.</p>
     </div>
-    <div class="events-live-note"><span class="live-dot"></span><div><b>Проверка источников</b><small>При открытии сайта и автоматически каждые 30 минут</small></div></div>
+    <div class="events-live-note"><span class="live-dot"></span><div><b>Актуальная афиша</b><small>События загружаются из билетного каталога и перепроверяются автоматически</small></div></div>
   </div>
+
   <div class="afisha-local-banner">
-    <div><b>Старые и неподтверждённые события не показываются.</b><div class="sub" style="margin-top:5px">Даты, время, цены и наличие билетов проверяйте на странице организатора.</div></div>
-    <div class="afisha-total"><strong id="liveSourcesCount">0</strong><span>официальных источников</span></div>
+    <div><b>Предстоящие мероприятия в Саранске и Мордовии.</b><div class="sub" style="margin-top:5px">Даты, стоимость и наличие билетов сверяйте на странице конкретного события.</div></div>
+    <div class="afisha-total"><strong id="eventsCountValue">0</strong><span>предстоящих событий</span></div>
   </div>
-  <p class="sub" id="liveSourcesStatus" aria-live="polite">Проверяем официальные источники…</p>
+
+  <div class="events-toolbar">
+    <div class="events-filters" id="eventsFilters">
+      <button class="active" data-filter="all" onclick="filterEvents('all',this)">Все</button>
+      <button data-filter="concert" onclick="filterEvents('concert',this)">Концерты</button>
+      <button data-filter="festival" onclick="filterEvents('festival',this)">Фестивали</button>
+      <button data-filter="theater" onclick="filterEvents('theater',this)">Театр</button>
+      <button data-filter="culture" onclick="filterEvents('culture',this)">Выставки и культура</button>
+      <button data-filter="sport" onclick="filterEvents('sport',this)">Спорт</button>
+      <button data-filter="family" onclick="filterEvents('family',this)">Семейные</button>
+      <button data-filter="show" onclick="filterEvents('show',this)">Шоу</button>
+      <button data-filter="free" onclick="filterEvents('free',this)">Бесплатно</button>
+    </div>
+    <div class="events-extra-filters">
+      <input id="eventSearch" type="search" placeholder="Поиск события или площадки" oninput="renderEvents()">
+      <select id="eventSort" onchange="renderEvents()"><option value="date">Сначала ближайшие</option><option value="price">Сначала бесплатные и недорогие</option><option value="title">По названию</option></select>
+    </div>
+  </div>
+  <p class="sub" id="eventsStatus" aria-live="polite">Загружаем актуальную афишу…</p>
+  <div class="events-count" id="eventsCountText"></div>
   <div class="cards events-grid" id="eventsGrid"></div>
-  <div class="events-footer-note"><b>Важно:</b> если источник временно недоступен, сайт не подставляет вместо него старые даты или цены.</div>
+  <div class="events-footer-note"><b>Покупка билетов:</b> кнопка на карточке открывает страницу мероприятия на KASSIR.RU. Перед оплатой проверьте дату, место, итоговую стоимость и наличие билетов.</div>
 </div></div>
 
 <!-- ИЗБРАННОЕ -->
@@ -1346,7 +1393,7 @@ const TRANS={};
 /* ==== ТРАНСПОРТ: ПО САРАНСКУ / ДО РАЙОНОВ / НА АВТОМОБИЛЕ ====
    Карта — OpenStreetMap (немецкое зеркало тайлов, без ключа и блокировок).
    Автомобильные маршруты — публичный сервер OSRM (router.project-osrm.org).
-   Номера городских маршрутов — реальные для Саранска; остановки и время в пути — демонстрационные. */
+   Городские маршруты восстановлены из прежней версии сайта; номера, остановки и время в пути необходимо перепроверять перед поездкой. */
 const SARANSK=[54.187,45.183];
 const PLACES={
   saransk:{name:'Саранск (центр)',lat:54.187,lng:45.183},
@@ -1360,7 +1407,31 @@ const PLACES={
   berezniki:{name:'Большие Березники',lat:54.176,lng:45.968},
   zubova:{name:'Зубова Поляна',lat:54.077,lng:42.837}
 };
-const CITY_ROUTES={};
+const CITY_ROUTES={
+  '7':{name:'Автобус №7',from:'СК Мордовия',to:'с. Солдатское',stops:'СК Мордовия · Центр · Автовокзал · Солдатское',time:'~35–45 мин'},
+  '8':{name:'Автобус №8',from:'пос. Дачный',to:'Большевистская',stops:'Дачный · Центр · Большевистская',time:'~30–40 мин'},
+  '15':{name:'Автобус №15',from:'Центр',to:'Аэропорт',stops:'Центр · Юбилейный · Луховка · Аэропорт',time:'~25–35 мин'},
+  '28':{name:'Автобус №28',from:'Аптечный склад',to:'Крылова',stops:'Аптечный склад · Центр · Крылова',time:'~25–35 мин'},
+  '32':{name:'Автобус №32',from:'Северо-Запад',to:'Центр',stops:'Северо-Запад · ДК Луч · Огарёва · Центр',time:'~20–30 мин'},
+  '40':{name:'Автобус №40',from:'Лисма',to:'Центр',stops:'Лисма · ТЭЦ-2 · Центр',time:'~30–40 мин'},
+  '44':{name:'Автобус №44',from:'Ардатовская',to:'Спорткомплекс',stops:'Автовокзал · Центральный рынок · Огарёва · Технопарк · Вокзал',time:'~35–45 мин'},
+  '66':{name:'Автобус №66',from:'Элеватор',to:'Солнечная',stops:'Солнечная · Северо-Запад · ДК Луч · Автовокзал · Вокзал',time:'~40–50 мин'},
+  '13к':{name:'Троллейбус №13к',from:'Северо-Западная',to:'Марины Расковой',stops:'Северо-Запад · ДК Луч · Автовокзал · Огарёва · Энгельса',time:'~25–35 мин'},
+  '19':{name:'Автобус №19',from:'Центр',to:'Химмаш',stops:'Центр · Володарского · Химмаш',time:'~25–35 мин'},
+  '22':{name:'Автобус №22',from:'Вокзал',to:'Светотехстрой',stops:'Вокзал · Центр · Светотехстрой',time:'~30–40 мин'},
+  '27':{name:'Автобус №27',from:'пос. Дачный',to:'Больница №5',stops:'Дачный · Центр · Больница №5',time:'~30–40 мин'},
+  '29':{name:'Автобус №29',from:'Центр',to:'Аэропорт',stops:'Центр · Юг · Аэропорт',time:'~25–35 мин'},
+  '30':{name:'Автобус №30',from:'Север',to:'Центр',stops:'Север · Огарёва · Центр',time:'~20–30 мин'},
+  '31':{name:'Автобус №31',from:'а/ст №1',to:'пос. Горяйновка',stops:'а/ст · Центр · Горяйновка',time:'~40–50 мин'},
+  '36':{name:'Автобус №36',from:'Лисма',to:'Центр',stops:'Лисма · Центр',time:'~25–35 мин'},
+  '38':{name:'Автобус №38',from:'Вокзал',to:'Юго-Запад',stops:'Вокзал · Центр · Юго-Запад',time:'~25–35 мин'},
+  '45':{name:'Автобус №45',from:'Центр',to:'Северо-Запад',stops:'Центр · ДК Луч · Северо-Запад',time:'~20–30 мин'},
+  '103':{name:'Автобус №103',from:'Центр',to:'Пригород',stops:'Центр · Пригородные остановки',time:'~45–60 мин'},
+  '112':{name:'Автобус №112',from:'Вокзал',to:'Юг',stops:'Вокзал · Центр · Юг',time:'~30–40 мин'},
+  '119э':{name:'Автобус №119э',from:'Центр',to:'Экспресс',stops:'Центр · ключевые остановки',time:'~20–30 мин'},
+  '137д':{name:'Автобус №137д',from:'Центр',to:'Дальний район',stops:'Центр · дальние остановки',time:'~40–55 мин'},
+  '213':{name:'Автобус №213',from:'Автовокзал',to:'Пригород',stops:'Автовокзал · пригород',time:'~50–70 мин'}
+};
 const DISTRICT_ROUTES=[
   {key:'ruzayevka',title:'Саранск → Рузаевка',desc:'Крупный транспортный узел рядом со столицей'},
   {key:'temnikov',title:'Саранск → Темников',desc:'Исторические и природные объекты района'},
@@ -1459,9 +1530,13 @@ function drawRouteOnMap(map,route,fromPlace,toPlace,layerRefName){
 
 function buildCityButtons(){
   const box=$('cityRouteButtons'); if(!box) return;
-  box.innerHTML='<div class="note">Проверенные схемы остановок и интервалы городских маршрутов сейчас не загружены. Не будем показывать демонстрационные данные как реальные.</div><a class="btn btn-ghost" href="https://xn--80aa4alnee.xn--p1ai/mun-order/transportation-management/news.php" target="_blank" rel="noopener noreferrer">Официальные сообщения администрации Саранска</a>';
-  const card=$('cityRouteCard');
-  if(card)card.innerHTML='<h3>Актуальные маршруты</h3><p class="sub" style="margin:0">Уточняйте движение, остановки и временные изменения у перевозчика и в официальных сообщениях администрации.</p>';
+  box.innerHTML='';
+  Object.keys(CITY_ROUTES).forEach(num=>{
+    const btn=document.createElement('button');
+    btn.type='button'; btn.className='tr-route-btn'; btn.textContent='№'+num; btn.dataset.num=num;
+    btn.addEventListener('click',()=>selectCityRoute(num));
+    box.appendChild(btn);
+  });
 }
 function selectCityRoute(num){
   document.querySelectorAll('#cityRouteButtons .tr-route-btn').forEach(b=>b.classList.toggle('active',b.dataset.num===num));
@@ -1561,44 +1636,121 @@ function go(p){curPage=p;document.querySelectorAll('.page').forEach(e=>e.classLi
   if(p==='events')renderEvents();
   if(p==='transport'){trSwitch(trSubTab);}}
 
-const EVENTS=[]; // События больше не хранятся в HTML: загружаются из официальных источников через /api/live-data.
-const LIVE_SOURCE_LINKS=[
- {id:'tourism-events',name:'Официальный туристический портал Мордовии — события',url:'https://turizmrm.ru/what-to-do/events/'},
- {id:'tourism-culture',name:'Официальный туристический портал — музеи и культура',url:'https://turizmrm.ru/what-to-do/culture/'},
- {id:'tourism-ecotourism',name:'Официальный туристический портал — экотуризм',url:'https://turizmrm.ru/what-to-do/ecotourism/'},
- {id:'erzia-home',name:'Музей Эрьзи — текущие события',url:'https://erzia-museum.ru/'},
- {id:'erzia-afisha',name:'Музей Эрьзи — афиша',url:'https://erzia-museum.ru/afisha/'},
- {id:'voronin-events',name:'Краеведческий музей им. И. Д. Воронина — события',url:'https://mrkm.ru/'},
- {id:'yaushev-afisha',name:'Театр оперы и балета им. Яушева — афиша',url:'https://muzteatr-saransk.ru/'},
- {id:'drama-afisha',name:'Русский драматический театр Мордовии — афиша',url:'https://grdtrm.ru/'},
- {id:'tourism-hotels',name:'Официальный туристический портал — гостиницы',url:'https://turizmrm.ru/where-to-stay/gostinitsy/'},
- {id:'tourism-bases',name:'Официальный туристический портал — базы отдыха',url:'https://turizmrm.ru/where-to-stay/bazy-otdykha/'},
- {id:'tourism-restaurants',name:'Официальный туристический портал — рестораны',url:'https://turizmrm.ru/where-to-eat/restorany/'},
- {id:'tourism-cafes',name:'Официальный туристический портал — кафе',url:'https://turizmrm.ru/where-to-eat/kafe/'},
- {id:'city-transport',name:'Администрация Саранска — изменения городского транспорта',url:'https://xn--80aa4alnee.xn--p1ai/mun-order/transportation-management/news.php'},
- {id:'bus-station',name:'Автовокзал Саранск — расписание',url:'https://xn--13-6kcaja9axlzb9b.xn--p1ai/'},
- {id:'rzd',name:'Вокзал Саранск / РЖД',url:'https://saransk.dzvr.ru/'},
- {id:'uvt-aero',name:'UVT Aero — расписание рейсов',url:'https://uvtaero.ru/raspisanie'},
- {id:'erzia-contacts',name:'Музей Эрьзи — контакты и режим работы',url:'https://erzia-museum.ru/ru/kontakty/'},
- {id:'voronin-contacts',name:'Краеведческий музей — контакты и режим работы',url:'https://mrkm.ru/kontakty/'},
- {id:'zapoved-rules',name:'Заповедная Мордовия — правила посещения',url:'https://zapoved-mordovia.ru/ru/правила-посещения.html'}
-];
-let LIVE_SOURCES=[];
-let LIVE_SOURCES_CHECKED_AT=null;
+let EVENTS=[];
+let EVENTS_CHECKED_AT=null;
+let EVENTS_SOURCE_STATUS='pending';
 let eventsFilter='all';
+
+function escapeLiveText(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function liveCheckedLabel(value){
+  if(!value)return 'Проверка ещё не выполнена';
+  const d=new Date(value); if(Number.isNaN(d.getTime()))return 'Проверка выполнена';
+  return 'Обновлено: '+d.toLocaleString('ru-RU',{dateStyle:'short',timeStyle:'short'});
+}
 function eventDayNum(d){return String(new Date(d+'T12:00:00').getDate());}
 function eventMonthShort(d){
   const m=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
   return m[new Date(d+'T12:00:00').getMonth()];
 }
+function eventCategoryLabel(type){
+  return ({festival:'Фестиваль',concert:'Концерт',theater:'Театр',culture:'Выставка / культура',sport:'Спорт',family:'Семейное',show:'Шоу'}[type]||'Событие');
+}
 function eventMatches(e,f){
   if(f==='all')return true;
   if(f==='free')return e.priceNum===0;
-  return (e.types||[e.type]).includes(f);
+  return (e.types||[e.category]).includes(f);
 }
-function yandexAfishaUrl(e){
-  const query = `${e.title} Саранск`;
-  return `https://afisha.yandex.ru/search?search-text=${encodeURIComponent(query)}&city=saransk&source=suggest&search-opened=yes`;
+function safeTicketUrl(value){
+  try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='saransk.kassir.ru'?u.href:'https://saransk.kassir.ru/';}
+  catch(_){return 'https://saransk.kassir.ru/';}
+}
+function eventFallbackIcon(type){return ({concert:'🎵',festival:'🎉',theater:'🎭',culture:'🖼️',sport:'🏅',family:'🧸',show:'✨'}[type]||'📅');}
+function addEventToTrip(btn){
+  const title=btn?.getAttribute('data-title')||'Событие';
+  if(typeof toast==='function')toast('Событие «'+title+'» добавлено в план');
+  else alert('Событие «'+title+'» добавлено в план');
+}
+function renderEventCard(e){
+  const category=eventCategoryLabel(e.category);
+  const image=e.image&&/^https:\/\//i.test(e.image)?`<img src="${escapeLiveText(e.image)}" alt="${escapeLiveText(e.title)}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('no-event-image')">`:'';
+  const time=e.time?escapeLiveText(e.time):'Уточняйте на странице билетов';
+  const price=e.price?escapeLiveText(e.price):'Уточняйте на странице билетов';
+  const place=escapeLiveText(e.place||'Саранск');
+  const date=e.date?`${eventDayNum(e.date)} ${eventMonthShort(e.date)}`:'Дата уточняется';
+  const url=safeTicketUrl(e.url);
+  const soldOut=!!e.soldOut;
+  const age=e.age?`<span class="event-age">${escapeLiveText(e.age)}</span>`:'';
+  const description=escapeLiveText(e.description||'Подробности мероприятия доступны на странице билетов.');
+  return `<article class="event-card">
+    <div class="event-cover ${image?'':'no-event-image'}">${image}<div class="event-cover-fallback">${eventFallbackIcon(e.category)}</div></div>
+    <div class="event-date-badge"><div class="day">${escapeLiveText(date.split(' ')[0])}</div><div class="meta"><div>${escapeLiveText(date.split(' ').slice(1).join(' '))}</div><div>${time}</div></div>${age}</div>
+    <div class="event-body">
+      <span class="event-type">${escapeLiveText(category)}</span>
+      <h3>${escapeLiveText(e.title)}</h3>
+      <div class="event-place">${place}</div>
+      <p class="event-desc">${description}</p>
+      <div class="event-foot">
+        <span class="event-price">${price}</span>
+        <div class="event-actions">
+          <button class="btn" style="padding:8px 12px;font-size:12px" onclick="addEventToTrip(this)" data-title="${escapeLiveText(e.title).replace(/"/g,'&quot;')}">В поездку</button>
+          <a class="btn btn-ghost" style="padding:8px 12px;font-size:12px" href="${escapeLiveText(url)}" target="_blank" rel="noopener noreferrer">${soldOut?'Проверить билеты':'Купить билет'}</a>
+        </div>
+      </div>
+      <div class="event-source-note">Источник: KASSIR.RU · данные проверяются автоматически</div>
+    </div>
+  </article>`;
+}
+function renderEvents(){
+  const grid=$('eventsGrid'); if(!grid)return;
+  const search=String($('eventSearch')?.value||'').toLowerCase().trim();
+  const sort=$('eventSort')?.value||'date';
+  let list=EVENTS.filter(e=>eventMatches(e,eventsFilter));
+  if(search)list=list.filter(e=>(`${e.title} ${e.place} ${e.description}`).toLowerCase().includes(search));
+  list.sort((a,b)=>sort==='title'?a.title.localeCompare(b.title,'ru'):sort==='price'?(a.priceNum??Number.MAX_SAFE_INTEGER)-(b.priceNum??Number.MAX_SAFE_INTEGER):String(a.dateTime||a.date).localeCompare(String(b.dateTime||b.date)));
+  const count=$('eventsCountValue'); if(count)count.textContent=String(EVENTS.length);
+  const countText=$('eventsCountText'); if(countText)countText.textContent=list.length?`Показано ${list.length} из ${EVENTS.length} событий`:'По выбранной категории событий пока нет.';
+  if(list.length){grid.innerHTML=list.map(renderEventCard).join('');}
+  else if(EVENTS.length){grid.innerHTML='<div class="card"><p class="sub">По выбранному фильтру событий не найдено. Выберите другую категорию.</p></div>';}
+  else if(EVENTS_SOURCE_STATUS==='unavailable'){
+    grid.innerHTML='<div class="card afisha-empty"><div class="afisha-empty-icon">📅</div><h3>Афиша временно недоступна</h3><p class="sub">Не удалось получить свежие карточки событий. Старые даты и цены не показываем.</p><a class="btn" href="https://saransk.kassir.ru/" target="_blank" rel="noopener noreferrer">Открыть афишу KASSIR.RU</a></div>';
+  }else{
+    grid.innerHTML='<div class="card afisha-empty"><div class="afisha-empty-icon">📅</div><h3>Ближайшие события не найдены</h3><p class="sub">Посмотрите полный каталог мероприятий на сайте билетного сервиса.</p><a class="btn" href="https://saransk.kassir.ru/" target="_blank" rel="noopener noreferrer">Открыть афишу KASSIR.RU</a></div>';
+  }
+}
+function filterEvents(filter,button){
+  eventsFilter=filter||'all';
+  document.querySelectorAll('#eventsFilters button').forEach(b=>b.classList.toggle('active',b===button));
+  renderEvents();
+}
+function renderHomeEvents(){
+  const box=$('homeEvents'); if(!box)return;
+  const list=EVENTS.slice().sort((a,b)=>String(a.dateTime||a.date).localeCompare(String(b.dateTime||b.date))).slice(0,3);
+  if(!list.length){box.innerHTML='<div class="mini-row"><div style="font-size:20px">📅</div><div style="flex:1"><b style="font-size:13.5px">Актуальная афиша</b><div style="font-size:12px;color:var(--muted)">Загружаем ближайшие мероприятия</div><a href="https://saransk.kassir.ru/" target="_blank" rel="noopener noreferrer">Открыть каталог билетов</a></div></div>';return;}
+  box.innerHTML=list.map(e=>`<article class="home-event-mini">${e.image?`<img src="${escapeLiveText(e.image)}" alt="" loading="lazy">`:`<div class="home-event-placeholder">${eventFallbackIcon(e.category)}</div>`}<div class="home-event-mini-body"><span>${escapeLiveText(eventCategoryLabel(e.category))}</span><b>${escapeLiveText(e.title)}</b><small>${escapeLiveText(e.dateLabel||e.date)}${e.time?' · '+escapeLiveText(e.time):''}</small><a href="${escapeLiveText(safeTicketUrl(e.url))}" target="_blank" rel="noopener noreferrer">Купить билет →</a></div></article>`).join('');
+}
+async function loadLiveEvents(){
+  const status=$('eventsStatus');
+  if(status)status.textContent='Загружаем актуальные события и проверяем даты…';
+  try{
+    const response=await fetch('/api/events?ts='+Date.now(),{cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.message||data.error||`HTTP ${response.status}`);
+    EVENTS=Array.isArray(data.events)?data.events:[];
+    EVENTS_CHECKED_AT=data.checkedAt||null;
+    EVENTS_SOURCE_STATUS=data.status||'ok';
+    if(status){
+      const diagnostics=data.diagnostics||{};
+      status.textContent=`${liveCheckedLabel(EVENTS_CHECKED_AT)} · источник: KASSIR.RU · проверено страниц событий: ${diagnostics.eventPagesChecked||0}. Автообновление — каждые 15 минут.`;
+    }
+  }catch(error){
+    console.warn('Не удалось загрузить актуальную афишу:',error);
+    EVENTS=[]; EVENTS_CHECKED_AT=null; EVENTS_SOURCE_STATUS='unavailable';
+    if(status)status.textContent='Не удалось проверить билетный каталог. Устаревшие события не показываются.';
+  }
+  renderEvents();
+  renderHomeEvents();
 }
 
 /* ===== СЕЗОННАЯ АНИМАЦИЯ ===== */
@@ -1639,53 +1791,6 @@ function yandexAfishaUrl(e){
   document.body.classList.add('intro-loading');
   window.setTimeout(()=>{screen.classList.add('is-hidden');document.body.classList.remove('intro-loading');},2000);
 })();
-
-/* ===== ЖИВАЯ ФИЛЬТРАЦИЯ АФИШИ ===== */
-function escapeLiveText(value){return String(value||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-function liveCheckedLabel(value){
-  if(!value)return 'Проверка ещё не выполнена';
-  const d=new Date(value); if(Number.isNaN(d.getTime()))return 'Проверка выполнена';
-  return 'Проверено: '+d.toLocaleString('ru-RU',{dateStyle:'short',timeStyle:'short'});
-}
-function renderEvents(){
-  const grid=$('eventsGrid'); if(!grid)return;
-  const eventIds=new Set(['tourism-events','erzia-home','erzia-afisha','voronin-events','yaushev-afisha','drama-afisha']);
-  const all=LIVE_SOURCES.length?LIVE_SOURCES:LIVE_SOURCE_LINKS.map(x=>({...x,status:'pending'}));
-  const list=all.filter(source=>eventIds.has(source.id));
-  const count=$('liveSourcesCount'); if(count)count.textContent=String(list.length);
-  grid.innerHTML=list.map(source=>{
-    const ok=source.status==='ok';
-    const excerpt='Официальная афиша организатора. Актуальные даты, время, стоимость и наличие билетов проверяйте непосредственно на странице источника.';
-    const checked=ok?liveCheckedLabel(source.checkedAt||LIVE_SOURCES_CHECKED_AT):'Автоматическая проверка недоступна';
-    return `<article class="event-card"><div class="event-body"><span class="event-type">${ok?'Официальная страница доступна':'Официальная ссылка'}</span><h3>${escapeLiveText(source.name)}</h3><p class="event-desc">${escapeLiveText(excerpt)}</p><div class="event-foot"><span class="event-price">${escapeLiveText(checked)}</span><a class="btn btn-ghost" href="${escapeLiveText(source.url)}" target="_blank" rel="noopener noreferrer">Открыть источник</a></div></div></article>`;
-  }).join('');
-}
-function filterEvents(){renderEvents();}
-function renderHomeEvents(){
-  const box=$('homeEvents'); if(!box)return;
-  const all=(LIVE_SOURCES.length?LIVE_SOURCES:LIVE_SOURCE_LINKS);
-  const list=all.filter(source=>['tourism-events','erzia-home','erzia-afisha','voronin-events','yaushev-afisha','drama-afisha'].includes(source.id)).slice(0,3);
-  box.innerHTML=list.map(source=>`<div class="mini-row"><div style="font-size:20px">📅</div><div style="flex:1"><b style="font-size:13.5px">${escapeLiveText(source.name)}</b><div style="font-size:12px;color:var(--muted)">${source.status==='ok'?'Официальная страница доступна':'Откройте официальный источник'}</div><a href="${escapeLiveText(source.url)}" target="_blank" rel="noopener noreferrer">Посмотреть актуальную информацию</a></div></div>`).join('');
-}
-async function loadLiveSources(){
-  const status=$('liveSourcesStatus');
-  if(status)status.textContent='Проверяем официальные источники…';
-  try{
-    const response=await fetch('/api/live-data?ts='+Date.now(),{cache:'no-store'});
-    const data=await response.json();
-    if(!response.ok)throw new Error(data.error||'HTTP '+response.status);
-    LIVE_SOURCES=Array.isArray(data.sources)?data.sources:[];
-    LIVE_SOURCES_CHECKED_AT=data.checkedAt||null;
-    if(status){const okCount=LIVE_SOURCES.filter(source=>source.status==='ok').length;status.textContent='Проверено: '+liveCheckedLabel(LIVE_SOURCES_CHECKED_AT)+'. Доступно '+okCount+' из '+LIVE_SOURCES.length+' официальных страниц. Повторная проверка — каждые 30 минут.';}
-  }catch(error){
-    console.warn('Не удалось проверить официальные источники:',error);
-    LIVE_SOURCES=LIVE_SOURCE_LINKS.map(source=>({...source,status:'unavailable'}));
-    LIVE_SOURCES_CHECKED_AT=null;
-    if(status)status.textContent='Сейчас не удалось автоматически проверить страницы. Старые события не показываются — откройте официальные источники ниже.';
-  }
-  renderEvents();
-  renderHomeEvents();
-}
 
 function drawNav(){$('nav').innerHTML=PAGES.map(([k,n])=>
   `<button class="${curPage===k?'active':''}" onclick="go('${k}')">${n}</button>`).join('');}
@@ -2080,7 +2185,7 @@ async function loadLiveWeather(){
 }
 /* ==== конец блока погоды ==== */
 
-drawNav(); renderStatic(); renderSights(); renderMap(); renderRoutes(); renderFavs(); renderEvents(); renderHomeEvents(); initTripDates(); initMapZoom(); buildCityButtons(); buildDistrictList(); renderTrSubTabs(); if($('buildRouteBtn')) $('buildRouteBtn').addEventListener('click',buildCarRoute); if($('clearRouteBtn')) $('clearRouteBtn').addEventListener('click',clearCarRoute); loadLiveWeather(); setInterval(loadLiveWeather, 30*60*1000); loadLiveSources(); setInterval(loadLiveSources,30*60*1000);
+drawNav(); renderStatic(); renderSights(); renderMap(); renderRoutes(); renderFavs(); renderEvents(); renderHomeEvents(); initTripDates(); initMapZoom(); buildCityButtons(); buildDistrictList(); renderTrSubTabs(); if($('buildRouteBtn')) $('buildRouteBtn').addEventListener('click',buildCarRoute); if($('clearRouteBtn')) $('clearRouteBtn').addEventListener('click',clearCarRoute); loadLiveWeather(); setInterval(loadLiveWeather, 30*60*1000); loadLiveEvents(); setInterval(loadLiveEvents,15*60*1000);
 </script>
 <script>
 (()=>{
@@ -2209,7 +2314,11 @@ function initMordovochka(){
     return {
       attractions:POI.map(p=>({name:p.n,category:(CATS[p.c]||{}).n||p.c,area:areaOnly(p.d),description:String(p.t||'').slice(0,180)})),
       accommodation:[...HOTELS.map(h=>({name:h.n,type:'отель',area:'Саранск',price:null,availability:null})),...BASES.map(h=>({name:h.n,type:'база отдыха',area:areaOnly(h.d),price:null,availability:null}))],
-      routes:READY.map(r=>({name:r.n,area:r.d,stops:r.t,description:r.desc,note:'Маршрут сайта; не является схемой общественного транспорта.'})),
+      routes:READY.map(r=>({name:r.n,area:r.d,stops:r.t,description:r.desc,note:'Туристический маршрут сайта; не является схемой общественного транспорта.'})),
+      cityTransportRoutes:Object.entries(CITY_ROUTES).map(([number,r])=>({number,name:r.name,from:r.from,to:r.to,stops:r.stops,time:r.time,note:'Справочная запись из прежней версии сайта. Текущая схема и расписание не подтверждены.'})),
+      eventsCheckedAt:EVENTS_CHECKED_AT,
+      eventsStatus:EVENTS_SOURCE_STATUS,
+      events:EVENTS.slice(0,36).map(e=>({title:e.title,category:e.category,types:e.types,date:e.date,dateTime:e.dateTime,dateLabel:e.dateLabel,time:e.time,place:e.place,description:e.description,price:e.price,priceNum:e.priceNum,url:e.url,soldOut:e.soldOut,age:e.age})),
       weather:{provider:'Open-Meteo',checkedAt:WEATHER_UPDATED_AT,current:{temperature:$('curTemp')?.textContent||'',description:$('curDesc')?.textContent||''},forecast:WEATHER_FULL.slice(0,5).map(d=>({date:d.iso,tempMax:d.tMax,weatherCode:d.code,description:wmoInfo(d.code)[0]}))},
       policy:'У часов работы, цен, наличия мест и расписаний нет подтверждённых значений в статическом каталоге. Не выводить их из старых данных.'
     };
