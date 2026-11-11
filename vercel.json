@@ -1,7 +1,10 @@
 {
-  "cleanUrls": false,
-  "trailingSlash": false,
   "functions": {
-    "api/chat.js": { "maxDuration": 60 }
+    "api/chat.js": {
+      "maxDuration": 60
+    },
+    "api/live-data.js": {
+      "maxDuration": 20
+    }
   }
 }
