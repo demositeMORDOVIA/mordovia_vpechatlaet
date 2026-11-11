@@ -351,10 +351,12 @@ module.exports = async function handler(req, res) {
     const payload = JSON.stringify({
       model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "system", content: grounding },
-        ...history
-      ],
+  {
+    role: "system",
+    content: SYSTEM_PROMPT + "\n\n" + grounding
+  },
+  ...history.filter(message => message.role !== "system")
+],
       temperature: 0.1,
       max_tokens: 2048
     });
