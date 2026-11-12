@@ -1799,6 +1799,49 @@ async function loadLiveEvents(){
   window.setTimeout(()=>{screen.classList.add('is-hidden');document.body.classList.remove('intro-loading');},2000);
 })();
 
+function drawNav(){$('nav').innerHTML=PAGES.map(([k,n])=>
+  `<button class="${curPage===k?'active':''}" onclick="go('${k}')">${n}</button>`).join('');}
+
+function pic(key,cls=''){ const src=IMG[key]||((typeof key==='string'&&(/^(https?:\/\/|data:image\/)/.test(key)))?key:''); return src ? `<img src="${src}" class="${cls}" alt="" loading="lazy" onerror="this.onerror=null;this.src=IMG.SMOLNY">`
+  : `<div class="nophoto"><b>Фото объекта добавляется</b></div>`; }
+
+function isFav(id){return favs.includes(id)}
+function toggleFav(id,e){e.stopPropagation();
+  favs.includes(id)?favs=favs.filter(x=>x!==id):favs.push(id);
+  $('favCount').textContent=favs.length; renderSights(); if(curPage==='favs')renderFavs();
+  toast(favs.includes(id)?'Добавлено в избранное':'Удалено из избранного');}
+function addRoute(id,e){ if(e)e.stopPropagation();
+  if(!myRoute.includes(id)){myRoute.push(id);toast('Место добавлено в «Мой маршрут»');}
+  else toast('Это место уже в маршруте'); if(curPage==='routes')renderRoutes();}
+
+function poiCard(p){
+ return `<div class="poi" onclick="openPoi(${p.id})">
+  <div class="ph">${pic(p.img)}${p.top?'<div class="top">ТОП</div>':''}
+    <button class="fav ${isFav(p.id)?'on':''}" onclick="toggleFav(${p.id},event)">♥</button></div>
+  <div class="body">
+    <h3>${p.n}</h3>
+    <div class="meta">${p.d}<br>${p.h}</div>
+    <div class="poi-tags"><span class="tag">${CATS[p.c].n}</span></div>
+    <div class="row-end">
+      <div class="rate">★ ${p.r} <span>(${p.rv})</span></div>
+      <button class="btn btn-ghost" style="padding:7px 12px;font-size:13px" onclick="addRoute(${p.id},event)">+ В маршрут</button>
+    </div>
+  </div></div>`;
+}
+function openPoi(id){const p=POI.find(x=>x.id===id);
+ $('modalIn').innerHTML=`${pic(p.img)}
+  <div class="modal-body"><button class="close" onclick="closeModal()">Закрыть</button>
+   <h2 style="margin:0 0 6px">${p.n}</h2>
+   <div class="meta" style="color:var(--muted)">${p.d} · ${p.h} · ${CATS[p.c].n}</div>
+   <p style="margin:12px 0">${p.t}</p>
+   <div class="rate">★ ${p.r} <span>(${p.rv} отзывов)</span></div>
+   <div style="display:flex;gap:10px;margin-top:16px">
+     <button class="btn" onclick="addRoute(${p.id})">Добавить в маршрут</button>
+     <button class="btn btn-ghost" onclick="go('map');closeModal()">Показать на карте</button>
+   </div></div>`;
+ $('modal').classList.add('show');}
+function closeModal(){$('modal').classList.remove('show')}
+
 function renderSights(){
  const q=$('q').value.toLowerCase(), fd=$('fdistrict').value, fc=$('fcat').value||activeCat,
        fo=$('fopen').value, s=$('sort').value;
