@@ -1,7 +1,23 @@
 const https = require("https");
 const crypto = require("crypto");
-const { getLiveSources, inferTopic } = require("../lib/live-sources");
-const { getLiveEvents } = require("../lib/events");
+
+// Optional live data modules — if lib/ is missing on deploy, chat still works.
+let getLiveSources = async () => ({ checkedAt: new Date().toISOString(), sources: [] });
+let inferTopic = () => "general";
+let getLiveEvents = async () => ({ checkedAt: null, status: "unavailable", source: null, events: [] });
+try {
+  const liveSources = require("../lib/live-sources");
+  if (liveSources.getLiveSources) getLiveSources = liveSources.getLiveSources;
+  if (liveSources.inferTopic) inferTopic = liveSources.inferTopic;
+} catch (e) {
+  console.error("LISICHKA_DIAG: lib/live-sources not loaded:", e && e.message ? e.message : e);
+}
+try {
+  const liveEvents = require("../lib/events");
+  if (liveEvents.getLiveEvents) getLiveEvents = liveEvents.getLiveEvents;
+} catch (e) {
+  console.error("LISICHKA_DIAG: lib/events not loaded:", e && e.message ? e.message : e);
+}
 
 const SYSTEM_PROMPT = `Ты — Лисичка, дружелюбный туристический помощник сайта «Шумбрат — Мордовия». Помогай планировать поездки по Саранску и Республике Мордовия.
 
